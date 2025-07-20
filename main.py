@@ -4,9 +4,10 @@ import requests
 from datetime import datetime
 import pytz
 import plotly.express as px
-from streamlit_autorefresh import st_autorefresh
+import time
 
 # ======================== CONFIG SUPABASE ========================
+
 SUPABASE_URL = "https://qjoomrgjitlzgmdhteuz.supabase.co"
 API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqb29tcmdqaXRsemdtZGh0ZXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MjQzNjcsImV4cCI6MjA2NzQwMDM2N30.GM5Zh8w7n42ZHvBC_DjWFrKUziH0pE6TOydsXk3rp8U"
 TABLE_NAME = "agrizon"
@@ -17,6 +18,7 @@ HEADERS = {
 }
 
 # ======================== LIMITES E UNIDADES ========================
+
 LIMITES = {
     'cc1': {'min': 1, 'max': 3, 'unit': '[A]'},
     'cc2': {'min': 1, 'max': 3, 'unit': '[A]'},
@@ -30,6 +32,7 @@ LIMITES = {
 }
 
 # ======================== FUNÇÃO DE CONSULTA ========================
+
 def get_today_data():
     tz_br = pytz.timezone('America/Sao_Paulo')
     now_br = datetime.now(tz_br)
@@ -53,17 +56,20 @@ def get_today_data():
 
     return pd.DataFrame(response.json())
 
-# ======================== CONFIG DA PÁGINA ========================
+# ======================== STREAMLIT APP ========================
+
 st.set_page_config(page_title="Agrizon Dashboard", layout="wide")
 st.title("🌱⚛️ Agrizon Dashboard")
 st.write(f'📅 Leituras do Dia {datetime.now().date()}')
 
-# Auto-refresh every 30s
-REFRESH_INTERVAL = 30  # seconds
+REFRESH_INTERVAL = 30  # segundos
 st.write(f"🔄 Atualizando automaticamente a cada {REFRESH_INTERVAL} segundos.")
-st_autorefresh(interval=REFRESH_INTERVAL * 1000, key="refresh")
 
-# ======================== DADOS DO DIA ========================
+if 'last_timestamp' not in st.session_state:
+    st.session_state['last_timestamp'] = None
+
+# ======================== LOOP DE BUSCA ========================
+
 df = get_today_data()
 
 if df.empty:
@@ -72,50 +78,67 @@ else:
     df['timestemp'] = pd.to_datetime(df['timestemp'])
     df['Hora'] = df['timestemp'].dt.strftime('%H:%M:%S')
 
+    latest_timestamp = df['timestemp'].max()
+
+    # ======================== JANELA DE LOG ========================
     st.subheader("📋 Log de Warnings")
-    log_df = df[['timestemp', 'warning']].dropna()
+
+    log_df = df[['timestemp', 'warning']].copy()
+    log_df = log_df.dropna(subset=['warning'])
     log_df = log_df[log_df['warning'].str.strip() != ""]
+
     log_df['timestemp'] = log_df['timestemp'].dt.strftime('%Y-%m-%d %H:%M:%S')
-    log_text = "\n".join(f"[{row['timestemp']}] - {row['warning']}" for _, row in log_df.iterrows())
+
+    log_text = "\n".join(
+        f"[{row['timestemp']}] - {row['warning']}" for _, row in log_df.iterrows()
+    )
+
     st.text_area(" ", log_text, height=200, disabled=True)
 
-    # Gráficos
+    # ======================== VERIFICA ATUALIZAÇÃO ========================
+    if latest_timestamp != st.session_state['last_timestamp']:
+        st.session_state['last_timestamp'] = latest_timestamp
+    else:
+        st.info(f"⏳ Nenhuma nova atualização ({datetime.now().strftime('%H:%M:%S')})")
+
+    # ======================== GRÁFICOS ========================
     for col, config in reversed(list(LIMITES.items())):
         if col in df.columns:
             unit = config['unit']
-            fig = px.line(df, x='Hora', y=col, title=f"{col.upper()} - {unit}", markers=True)
-            fig.add_hline(y=config['min'], line_dash="dot", line_color="lightblue",
-                          annotation_text=f"Min: {config['min']} {unit}", annotation_position="bottom left")
-            fig.add_hline(y=config['max'], line_dash="dot", line_color="red",
-                          annotation_text=f"Max: {config['max']} {unit}", annotation_position="top left")
-            fig.update_layout(xaxis_title="Hora", yaxis_title=f"{col.upper()} {unit}", hovermode="x unified")
+
+            fig = px.line(
+                df,
+                x='Hora',
+                y=col,
+                title=f"{col.upper()} - {unit}",
+                markers=True
+            )
+
+            fig.add_hline(
+                y=config['min'],
+                line_dash="dot",
+                line_color="lightblue",
+                annotation_text=f"Min: {config['min']} {unit}",
+                annotation_position="bottom left"
+            )
+
+            fig.add_hline(
+                y=config['max'],
+                line_dash="dot",
+                line_color="red",
+                annotation_text=f"Max: {config['max']} {unit}",
+                annotation_position="top left"
+            )
+
+            fig.update_layout(
+                xaxis_title="Hora (HH:MM:SS)",
+                yaxis_title=f"{col.upper()} {unit}",
+                hovermode="x unified",
+                xaxis_tickangle=-90
+            )
             st.plotly_chart(fig, use_container_width=True)
 
-# ======================== CONTROLE DE DISPOSITIVOS ========================
-st.title("Controle de Dispositivos")
 
-# Inicializa session_state
-for key in ["PSA1", "PSA2", "Camara1", "Camara2", "Camara3", "Camara4"]:
-    if key not in st.session_state:
-        st.session_state[key] = False
-
-# Renderiza toggles
-st.session_state["PSA1"] = st.toggle("PSA 1", value=st.session_state["PSA1"])
-st.session_state["PSA2"] = st.toggle("PSA 2", value=st.session_state["PSA2"])
-st.session_state["Camara1"] = st.toggle("Câmara 1", value=st.session_state["Camara1"])
-st.session_state["Camara2"] = st.toggle("Câmara 2", value=st.session_state["Camara2"])
-st.session_state["Camara3"] = st.toggle("Câmara 3", value=st.session_state["Camara3"])
-st.session_state["Camara4"] = st.toggle("Câmara 4", value=st.session_state["Camara4"])
-
-estado = {k: v for k, v in st.session_state.items() if k in ["PSA1", "PSA2", "Camara1", "Camara2", "Camara3", "Camara4"]}
-ip_esp32 = "192.168.15.41"
-
-if st.button("Atualizar Dispositivos"):
-    try:
-        r = requests.post(f"http://{ip_esp32}/controle", json=estado, timeout=5)
-        if r.status_code == 200:
-            st.success("✅ Comando enviado com sucesso!")
-        else:
-            st.error(f"Erro no ESP32: {r.status_code}")
-    except Exception as e:
-        st.error(f"Erro de conexão: {e}")
+# Aguarda e recarrega
+time.sleep(REFRESH_INTERVAL)
+st.rerun()
