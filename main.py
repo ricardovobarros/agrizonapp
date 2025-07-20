@@ -138,6 +138,36 @@ else:
             )
             st.plotly_chart(fig, use_container_width=True)
 
+# ======================== Botoes ========================
+st.title("Controle de Dispositivos")
+
+# Cria switches
+psa1 = st.toggle("PSA 1", value=False)
+psa2 = st.toggle("PSA 2", value=False)
+cam1 = st.toggle("Câmara 1", value=False)
+cam2 = st.toggle("Câmara 2", value=False)
+cam3 = st.toggle("Câmara 3", value=False)
+cam4 = st.toggle("Câmara 4", value=False)
+
+# Monta dicionário com estados
+estado = {
+    "PSA1": psa1,
+    "PSA2": psa2,
+    "Camara1": cam1,
+    "Camara2": cam2,
+    "Camara3": cam3,
+    "Camara4": cam4
+}
+ip_esp32 = "192.168.15.41"
+
+# Envia para ESP32 quando mudar
+if st.button("Atualizar"):
+    try:
+        requests.post(f"http://{ip_esp32}/controle", json=estado)
+        st.success("Comando enviado!")
+    except Exception as e:
+        st.error(f"Erro: {e}")
+
 # Aguarda e recarrega
 time.sleep(REFRESH_INTERVAL)
 st.rerun()
