@@ -4,6 +4,7 @@ import requests
 from datetime import datetime
 import pytz
 import plotly.express as px
+from streamlit_autorefresh import st_autorefresh
 
 # ======================== CONFIG SUPABASE ========================
 SUPABASE_URL = "https://qjoomrgjitlzgmdhteuz.supabase.co"
@@ -57,13 +58,10 @@ st.set_page_config(page_title="Agrizon Dashboard", layout="wide")
 st.title("🌱⚛️ Agrizon Dashboard")
 st.write(f'📅 Leituras do Dia {datetime.now().date()}')
 
-REFRESH_INTERVAL = 30  # segundos
+# Auto-refresh every 30s
+REFRESH_INTERVAL = 30  # seconds
 st.write(f"🔄 Atualizando automaticamente a cada {REFRESH_INTERVAL} segundos.")
-
-# Atualização automática sem perder estado
-count = st.experimental_memo(lambda: 0)
-st_autorefresh = st.experimental_rerun
-st_autorefresh()
+st_autorefresh(interval=REFRESH_INTERVAL * 1000, key="refresh")
 
 # ======================== DADOS DO DIA ========================
 df = get_today_data()
