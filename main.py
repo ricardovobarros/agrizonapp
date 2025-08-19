@@ -206,7 +206,7 @@ else:
 # ----------------GRAFICOS da camaras ----------------
 st.subheader("⚡ Leituras  das CAMARAS (Correntes) e ORP (Tensao)")
 if df.empty:
-    st.info(f"Nenhum dado encontrado em 'leitura de psas' para {selected_date}.")
+    st.info(f"Nenhum dado encontrado em 'leitura das camaras' para {selected_date}.")
 else:
     for col, cfg in reversed(list(LIMITES.items())):
         if col in df.columns:
