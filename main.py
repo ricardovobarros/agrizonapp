@@ -205,27 +205,30 @@ else:
 
 # ----------------GRAFICOS da camaras ----------------
 st.subheader("⚡ Leituras  das CAMARAS (Correntes) e ORP (Tensao)")
-for col, cfg in reversed(list(LIMITES.items())):
-    if col in df.columns:
-        df_plot = filter_nonzero(df, col)
-        upper = 6000 if col != "orp" else None  # não corta ORP
-        df_plot = cap_upper(df_plot, col, upper)
-        if df_plot.empty:
-            continue
-
-        fig = px.line(df_plot, x="ts_local", y=col, title=f"{col.upper()} {cfg['unit']}", markers=True)
-        fig.add_hline(y=cfg["min"], line_dash="dot", line_color="lightblue",
-                      annotation_text=f"Min: {cfg['min']} {cfg['unit']}", annotation_position="bottom left")
-        fig.add_hline(y=cfg["max"], line_dash="dot", line_color="red",
-                      annotation_text=f"Max: {cfg['max']} {cfg['unit']}", annotation_position="top left")
-        fig.update_layout(
-            xaxis_title="Hora (HH:MM:SS)",
-            yaxis_title=f"{col.upper()} {cfg['unit']}",
-            hovermode="x unified",
-            xaxis_tickformat="%H:%M:%S",
-            xaxis_tickangle=-90
-        )
-        st.plotly_chart(fig, use_container_width=True)
+if df.empty:
+    st.info(f"Nenhum dado encontrado em 'leitura de psas' para {selected_date}.")
+else:
+    for col, cfg in reversed(list(LIMITES.items())):
+        if col in df.columns:
+            df_plot = filter_nonzero(df, col)
+            upper = 6000 if col != "orp" else None  # não corta ORP
+            df_plot = cap_upper(df_plot, col, upper)
+            if df_plot.empty:
+                continue
+    
+            fig = px.line(df_plot, x="ts_local", y=col, title=f"{col.upper()} {cfg['unit']}", markers=True)
+            fig.add_hline(y=cfg["min"], line_dash="dot", line_color="lightblue",
+                          annotation_text=f"Min: {cfg['min']} {cfg['unit']}", annotation_position="bottom left")
+            fig.add_hline(y=cfg["max"], line_dash="dot", line_color="red",
+                          annotation_text=f"Max: {cfg['max']} {cfg['unit']}", annotation_position="top left")
+            fig.update_layout(
+                xaxis_title="Hora (HH:MM:SS)",
+                yaxis_title=f"{col.upper()} {cfg['unit']}",
+                hovermode="x unified",
+                xaxis_tickformat="%H:%M:%S",
+                xaxis_tickangle=-90
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- READINGS (quebra por PSA; zeros removidos; limites) ----------------
 st.subheader("⚡ Leituras dos PSAs: Tensão, Corrente e Potência")
