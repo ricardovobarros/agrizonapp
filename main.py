@@ -164,8 +164,7 @@ REFRESH_INTERVAL = 30
 inicio_txt = TIME_INICIO.strftime("%H:%M") if TIME_INICIO else "00:00 (dia inteiro)"
 st.caption( f"Auto-refresh só quando a cada {REFRESH_INTERVAL} segundos se a data for hoje ({datetime.now().date()}).")
 
-# ---------------- LEITURA TABELAS ----------------
-st.subheader("⚡ Leituras  das CAMARAS (Correntes) e ORP (Tensao)")
+
 # ---------------- LEITURA TABELAS ----------------
 df = get_table_by_date_respecting_db_tz("agrizon",  "timestemp", selected_date, TIME_INICIO, db_tz_is_local=True)
 df_read = get_table_by_date_respecting_db_tz("readings", "ts", selected_date, TIME_INICIO, db_tz_is_local=True)
@@ -204,7 +203,8 @@ if warnings_list:
 else:
     st.text("Sem warnings para o período.")
 
-
+# ----------------GRAFICOS da camaras ----------------
+st.subheader("⚡ Leituras  das CAMARAS (Correntes) e ORP (Tensao)")
 for col, cfg in reversed(list(LIMITES.items())):
     if col in df.columns:
         df_plot = filter_nonzero(df, col)
