@@ -205,8 +205,9 @@ else:
 
 # ----------------GRAFICOS da camaras ----------------
 st.subheader("⚡ Leituras  das CAMARAS (Correntes) e ORP (Tensao)")
+
 if df.empty:
-    st.info(f"Nenhum dado encontrado em 'leitura das camaras' para {selected_date}.")
+    st.info(f"Nenhum dado encontrado em 'leitura de camaras ou orp' para {selected_date}.")
 else:
     for col, cfg in reversed(list(LIMITES.items())):
         if col in df.columns:
@@ -215,7 +216,7 @@ else:
             df_plot = cap_upper(df_plot, col, upper)
             if df_plot.empty:
                 continue
-    
+
             fig = px.line(df_plot, x="ts_local", y=col, title=f"{col.upper()} {cfg['unit']}", markers=True)
             fig.add_hline(y=cfg["min"], line_dash="dot", line_color="lightblue",
                           annotation_text=f"Min: {cfg['min']} {cfg['unit']}", annotation_position="bottom left")
