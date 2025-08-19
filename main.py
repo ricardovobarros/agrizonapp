@@ -180,12 +180,12 @@ st.subheader("📋 Log de Warnings")
 
 warnings_list = []
 
-# warnings da tabela agrizon
-if not df.empty and "warning" in df.columns:
-    log_df = df[["ts_local", "warning"]].dropna(subset=["warning"])
-    log_df = log_df[log_df["warning"].astype(str).str.strip() != ""]
-    if not log_df.empty:
-        warnings_list.append(log_df)
+# # warnings da tabela agrizon
+# if not df.empty and "warning" in df.columns:
+#     log_df = df[["ts_local", "warning"]].dropna(subset=["warning"])
+#     log_df = log_df[log_df["warning"].astype(str).str.strip() != ""]
+#     if not log_df.empty:
+#         warnings_list.append(log_df)
 
 # warnings da tabela readings
 if not df_read.empty and "warning" in df_read.columns:
